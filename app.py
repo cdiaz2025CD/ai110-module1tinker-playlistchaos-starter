@@ -248,12 +248,28 @@ def add_song_sidebar():
             "energy": energy,
             "tags": tags,
         }
-        if title and artist:
-            normalized = normalize_song(song)
-            all_songs = st.session_state.songs[:]
-            all_songs.append(normalized)
-            st.session_state.songs = all_songs
 
+        if title.strip() and artist.strip():
+            normalized = normalize_song(song)
+
+            duplicate = any(
+                str(existing.get("title", "")).strip().lower()
+                == normalized["title"].lower()
+                and str(existing.get("artist", "")).strip().lower()
+                == normalized["artist"]
+                for existing in st.session_state.songs
+            )
+
+            if duplicate:
+                st.sidebar.warning(
+                    "This song is already in your playlist."
+                )
+            else:
+                all_songs = st.session_state.songs[:]
+                all_songs.append(normalized)
+                st.session_state.songs = all_songs
+        else:
+            st.sidebar.warning("Enter a title and artist.")
 
 def playlist_tabs(playlists):
     """Render playlists in tabs."""
@@ -332,7 +348,7 @@ def stats_section(playlists):
 
     col4, col5, col6 = st.columns(3)
     col4.metric("Mixed songs", stats["mixed_count"])
-    col5.metric("Hype ratio", f"{stats['hype_ratio']:.2f}")
+    col5.metric("Hype ratio", f"{stats['hype_ratio']:.1%}")
     col6.metric("Average energy", f"{stats['avg_energy']:.2f}")
 
     top_artist = stats["top_artist"]
